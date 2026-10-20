@@ -30,3 +30,9 @@ Quand je demande un site web animé, scroll-driven ou 3D, inspire-toi de ces res
 - Propose deux ou trois directions visuelles avant de coder.
 - Cite la référence utilisée et son origine quand tu t'en inspires.
 - Ne copie pas un composant ou un site à l'identique : adapte-le à ma marque.
+
+## Vidéo programmatique
+
+- **Remotion** : le MCP est déprécié. Installe les skills dans le projet Remotion avec `npx remotion skills add`, puis utilise `/remotion-docs` pour la documentation à jour.
+- **HyperFrames** (HTML/CSS/JS vers MP4, Apache-2.0) : plugin `hyperframes@hyperframes` ; CLI `npx hyperframes init|preview|render`.
+- **Montage** : Kinocut (`kino`), skill `beat-sync-video-editing` pour caler les coupes sur la musique.

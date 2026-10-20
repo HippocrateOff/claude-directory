@@ -1,6 +1,6 @@
 # Guide pas à pas : connecteurs Claude + Claude Code
 
-Fichiers du kit : `install-mcp.sh`, `install-api-keys.sh`, `CLAUDE.md`, ce guide.
+Fichiers du kit : `install-mcp.sh` (noyau), `install-optional.sh`, `install-api-keys.sh`, `lib.sh` (fonctions communes, ne pas lancer seul), `CLAUDE.md`, ce guide.
 Rien n'est installé tant que tu n'as pas lancé ces étapes sur ta machine.
 
 ## Étape 0 : prérequis (une fois)
@@ -9,7 +9,7 @@ Rien n'est installé tant que tu n'as pas lancé ces étapes sur ta machine.
 - Node.js 22.16+ (`node -v`), Python 3.11+ (`python3 --version`) et `pip`.
 - [uv](https://docs.astral.sh/uv/), qui fournit `uvx` (`uv --version`).
 - ffmpeg (`ffmpeg -version`) : indispensable à Kinocut et au skill beat-sync.
-- Facultatifs : Blender 3.0+ (pour le MCP Blender), Kdenlive (pour CatCut).
+- Facultatifs : Blender 3.0+ (MCP Blender), R ≥ 4.2 (clinical-trial-design), QGIS 3.28+ (qgis), Figma Desktop (figma-mcp-go), Windows + Kdenlive (CatCut).
 
 ## Étape 1 : serveurs sans clé (Claude Code)
 
@@ -21,7 +21,34 @@ bash install-mcp.sh
 
 Le résumé final liste OK / SKIP / FAIL. Un SKIP veut dire qu'un prérequis manque : installe-le puis relance le script. Le relancer est sans danger, car un serveur déjà enregistré est compté OK.
 
+Ce que le noyau installe :
+
+- Serveurs MCP : parallel-search, idc, keyless-research, clinicaltrials, kinocut, blender, et les serveurs OAuth vulk, Canva, figma, Zapier-MCP.
+- Plugin Claude Code **HyperFrames** (`hyperframes@hyperframes`, HeyGen).
+- Skill `beat-sync-video-editing`, installé pour l'utilisateur (`~/.claude/skills`), sans question interactive.
+
 Si `kino` reste introuvable après `pip install kinocut`, ajoute `~/.local/bin` à ton `PATH`.
+
+**Remotion** n'est plus installé comme serveur MCP, car Remotion l'a déprécié. Dans un projet Remotion, lance `npx remotion skills add`, puis utilise `/remotion-docs`. Si une ancienne version du kit l'avait ajouté : `claude mcp remove --scope user remotion`.
+
+## Étape 1 bis : serveurs optionnels
+
+```bash
+bash install-optional.sh                 # tout sauf Blender complet
+BLENDER_FULL=1 bash install-optional.sh  # avec RFingAdam/mcp-blender (218 outils, AGPL-3.0)
+```
+
+Chaque bloc est sauté (SKIP) si son prérequis manque :
+
+| Bloc | Prérequis | À faire ensuite |
+|------|-----------|-----------------|
+| clinical-trial-design (plugin) | R ≥ 4.2 et `R -e 'install.packages(c("gsDesign","gsDesign2","graphicalMCP","jsonlite","officer","rmarkdown"))'` | Rien |
+| figma-mcp-go | Node, Figma Desktop | Figma Desktop > Plugins > Development > Import plugin from manifest (`manifest.json` du `plugin.zip` des releases GitHub) |
+| qgis | QGIS 3.28+, uv | QGIS > Extensions > Installer/Gérer les extensions > « QGIS MCP » |
+| hyperframes (MCP timeverse) | uv, CLI `npx hyperframes` | Tester avec `/mcp` |
+| recreator | pip | Rien : la commande `recreator-mcp` est branchée |
+| blender-full | `BLENDER_FULL=1`, pip, git | N'active qu'**un** addon Blender à la fois : les deux utilisent le port 9876 |
+| CatCut | Windows, uv (Python 3.11–3.12), Kdenlive | Copier la config affichée par `catcut config show-mcp` |
 
 ## Étape 2 : authentifier les serveurs OAuth
 
@@ -61,14 +88,12 @@ Réglages > Connecteurs (ou « + » dans la conversation > Connecteurs) :
 | Outil | À faire |
 |-------|---------|
 | Blender | `uvx mcp-for-blender install-addon`, puis dans Blender : Édition > Préférences > Modules complémentaires, activer « Interface: MCP for Blender ». Dans la barre latérale (touche N), cliquer **Start MCP Server**. |
-| CatCut | Installer Kdenlive, puis copier la config affichée par `catcut config show-mcp`. |
-| HyperFrames | Le script le branche avec `uvx timeverse-hyperframes-mcp`, une commande vérifiée dans le paquet. S'il demande son CLI, installe-le (voir sa doc), puis teste avec `/mcp`. |
-| Recreator | Installé par `pip` mais non branché. La commande de lancement est `recreator-mcp` : `claude mcp add --scope user recreator -- recreator-mcp` |
+| HyperFrames | Le plugin s'utilise via ses skills ; le CLI se lance avec `npx hyperframes init`, `preview` ou `render`. Si un fichier du plugin est un pointeur Git LFS, lance `git -C ~/.claude/plugins/marketplaces/hyperframes lfs pull`. |
 | GitMCP (lecture seule) | `claude mcp add --scope user --transport http gitmcp https://gitmcp.io/OWNER/REPO`, en remplaçant `OWNER/REPO` par un vrai dépôt. |
 
 ## Étape 7 : CLAUDE.md
 
-Copie `CLAUDE.md` à la racine du projet, ou dans `~/.claude/CLAUDE.md` pour tous les projets. Il contient tes 10 références de sites 3D et animés. Claude Code lit ce fichier mais n'ouvre pas les sites tout seul.
+Copie `CLAUDE.md` à la racine du projet, ou dans `~/.claude/CLAUDE.md` pour tous les projets. Il contient tes 10 références de sites 3D et animés, et les règles pour la vidéo programmatique (Remotion, HyperFrames, montage). Claude Code lit ce fichier mais n'ouvre pas les sites tout seul.
 
 ## Étape 8 : Beat-Cut Studio (manuel)
 
@@ -77,11 +102,11 @@ Copie `CLAUDE.md` à la racine du projet, ou dans `~/.claude/CLAUDE.md` pour tou
 - Compte requis, 7 jours d'essai Pro, aucun prix affiché.
 - Aucune API ni MCP mentionnée, rien sur les droits musicaux.
 
-Les alternatives gratuites installées par le script sont Kinocut et le skill `beat-sync-video-editing`.
+Les alternatives gratuites installées par le noyau sont Kinocut et le skill `beat-sync-video-editing`.
 
 ## Chaîne audiovisuelle
 
-Brief (Claude) > plans IA et musique (Atlas Cloud) > voix (ElevenLabs) > motion (Remotion, HyperFrames) > montage (Kinocut, CatCut, Premiere via Adobe) > 3D (Blender) > visuels (Canva, Figma, Adobe) > automatisation (Zapier).
+Brief (Claude) > plans IA et musique (Atlas Cloud) > voix (ElevenLabs) > motion (Remotion via skills, HyperFrames) > montage (Kinocut, CatCut, Premiere via Adobe) > 3D (Blender) > visuels (Canva, Figma, Adobe) > automatisation (Zapier).
 
 ## Exclus volontairement
 

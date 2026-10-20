@@ -1,80 +1,41 @@
 #!/usr/bin/env bash
-# Installation des serveurs MCP pour Claude Code (v2)
-# Usage : bash install-mcp.sh        (dans un terminal normal)
-# Chaque ligne vérifie ses prérequis et saute proprement si un outil manque.
-# Relançable : un serveur déjà enregistré est compté OK sans être réajouté.
+# Noyau : serveurs vérifiés, sans clé API. Sans danger à relancer.
+# Usage : bash install-mcp.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+need_claude
 
-have() { command -v "$1" >/dev/null 2>&1; }
-OK=(); SKIP=(); FAIL=()
+echo "=== A. Recherche et science (gratuit, sans compte) ==="
+mcp_step parallel-search -- --scope user --transport http parallel-search https://search.parallel.ai/mcp
+mcp_step idc -- --scope user --transport http idc https://api.imaging.datacommons.cancer.gov/mcp
+mcp_step keyless-research uvx -- --scope user keyless-research -- uvx keyless-research-mcp
+mcp_step clinicaltrials npx -- --scope user clinicaltrials -- npx -y clinicaltrialsgov-mcp-server
 
-if ! have claude; then
-  echo "ERREUR : 'claude' (Claude Code) est introuvable. Installe-le d'abord."
-  exit 1
-fi
-
-# run NOM PREREQUIS... -- commande...
-run() {
-  local name="$1"; shift
-  local reqs=()
-  while [ "$1" != "--" ]; do reqs+=("$1"); shift; done
-  shift
-  for r in "${reqs[@]}"; do
-    if ! have "$r"; then
-      echo "[SKIP] $name : prérequis manquant ($r)"; SKIP+=("$name ($r)"); return
-    fi
-  done
-  echo "[....] $name"
-  if "$@"; then OK+=("$name"); else echo "[FAIL] $name"; FAIL+=("$name"); fi
-}
-
-# mcp_add NOM args... : 'claude mcp add --scope user' qui ignore un serveur déjà présent
-mcp_add() {
-  local name="$1"; shift
-  if claude mcp get "$name" >/dev/null 2>&1; then
-    echo "       déjà enregistré"; return 0
-  fi
-  claude mcp add --scope user "$name" "$@"
-}
-
-echo "=== A. Gratuit, sans clé ni compte ==="
-run parallel-search -- mcp_add parallel-search --transport http https://search.parallel.ai/mcp
-run idc -- mcp_add idc --transport http https://api.imaging.datacommons.cancer.gov/mcp
-run keyless-research uvx -- mcp_add keyless-research -- uvx keyless-research-mcp
-run clinicaltrials npx -- mcp_add clinicaltrials -- npx -y clinicaltrialsgov-mcp-server
-
-echo "=== Audiovisuel ==="
-if have ffmpeg && have pip; then
-  have kino || run kinocut-pip pip -- pip install kinocut
-  have kino || echo "       'kino' absent du PATH (souvent ~/.local/bin) : ajoute-le puis relance"
-  run kinocut kino -- mcp_add kinocut -- kino --mcp
+echo "=== B. Audiovisuel ==="
+if ! have ffmpeg; then
+  skip kinocut "prérequis manquant : ffmpeg"
 else
-  echo "[SKIP] kinocut : ffmpeg ou pip manquant"; SKIP+=("kinocut (ffmpeg/pip)")
+  have kino || cmd_step kinocut-pip pip -- pip install kinocut
+  have kino || echo "  -> 'kino' introuvable après l'installation : ajoute ~/.local/bin à ton PATH puis relance."
+  mcp_step kinocut kino -- --scope user kinocut -- kino --mcp
 fi
-run blender uvx -- mcp_add blender -- uvx mcp-for-blender
-run remotion npx -- mcp_add remotion -- npx -y @remotion/mcp
-run hyperframes uvx -- mcp_add hyperframes -- uvx timeverse-hyperframes-mcp
-have pip && run recreator-pip pip -- pip install recreator-mcp   # installé, pas branché
-run beat-sync-skill npx -- npx -y skills add https://github.com/ecliptic-ai/skills --skill beat-sync-video-editing
-
-if have uv; then
-  have catcut || run catcut-install uv -- uv tool install catcut
-  have catcut && { echo "--- Config CatCut à copier (nécessite Kdenlive) ---"; catcut config show-mcp; }
+mcp_step blender uvx -- --scope user blender -- uvx mcp-for-blender
+# HyperFrames (open source, Apache-2.0) : plugin Claude Code officiel de HeyGen
+if has_plugin "hyperframes@hyperframes"; then
+  ok "hyperframes-plugin (déjà installé)"
 else
-  echo "[SKIP] catcut : uv manquant"; SKIP+=("catcut (uv)")
+  cmd_step hyperframes-marketplace -- claude plugin marketplace add heygen-com/hyperframes
+  cmd_step hyperframes-plugin -- claude plugin install hyperframes@hyperframes
 fi
+# Skill de montage calé sur les beats (FFmpeg), installé pour l'utilisateur (-g), sans question (-y)
+cmd_step beat-sync-skill npx -- npx -y skills add https://github.com/ecliptic-ai/skills \
+  --skill beat-sync-video-editing -g -a claude-code -y
 
-echo "=== B. Connexion par compte (OAuth : authentifier ensuite avec /mcp) ==="
-run vulk -- mcp_add vulk --transport http https://mcp.vulk.dev/mcp
-run canva -- mcp_add Canva --transport http https://mcp.canva.com/mcp
-run figma -- mcp_add figma --transport http https://mcp.figma.com/mcp
-run zapier -- mcp_add Zapier-MCP --transport http https://mcp.zapier.com/api/v1/connect
+echo "=== C. Connexion par compte (OAuth : authentifier ensuite avec /mcp) ==="
+mcp_step vulk -- --scope user --transport http vulk https://mcp.vulk.dev/mcp
+mcp_step Canva -- --scope user --transport http Canva https://mcp.canva.com/mcp
+mcp_step figma -- --scope user --transport http figma https://mcp.figma.com/mcp
+mcp_step Zapier-MCP -- --scope user --transport http Zapier-MCP https://mcp.zapier.com/api/v1/connect
 
+summary
 echo
-echo "=== Résumé ==="
-echo "OK   : ${OK[*]}"
-echo "SKIP : ${SKIP[*]}"
-echo "FAIL : ${FAIL[*]}"
-echo
-claude mcp list
-echo
-echo "Suite : voir GUIDE.md (OAuth via /mcp, clés API, connecteurs manuels)."
+echo "Suite : GUIDE.md (OAuth via /mcp, Remotion via skills, install-optional.sh, install-api-keys.sh)."
