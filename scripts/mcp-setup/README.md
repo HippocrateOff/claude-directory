@@ -8,7 +8,9 @@ bash scripts/mcp-setup/install-mcp.sh
 
 - Each step checks that its tools are installed (`uvx`, `npx`, `pip`, `uv`, `ffmpeg`, `kino`). If one is missing, the step is skipped and listed under `SKIP` in the summary instead of breaking the run.
 - You can run the script again safely: a server that is already registered counts as OK.
-- What to do next (logging into OAuth servers with `/mcp`, special cases, API keys) is in [GUIDE.md](./GUIDE.md), which is in French.
+- `install-api-keys.sh` adds the servers that need a key (Atlas Cloud, ElevenLabs, GitHub), using only the environment variables you set.
+- [GUIDE.md](./GUIDE.md), in French, is the step-by-step guide: prerequisites, logging into OAuth servers with `/mcp`, API keys, manual connectors, and the audio/video pipeline.
+- [CLAUDE.md](./CLAUDE.md) lists references for 3D and animated websites. Copy it to a project root or to `~/.claude/CLAUDE.md`.
 
 | Name | Group | What it does |
 |------|-------|--------------|
@@ -24,3 +26,4 @@ bash scripts/mcp-setup/install-mcp.sh
 | `beat-sync-video-editing` | video | Skill: FFmpeg-based editing synced to beats, a free alternative to Beat-Cut |
 | `catcut` | video | Installed with `uv tool`; prints its MCP config (needs Kdenlive) |
 | `vulk`, `Canva`, `figma`, `Zapier-MCP` | OAuth | Need you to log in with `/mcp` |
+| `atlascloud`, `elevenlabs`, `github` | API key | Added by `install-api-keys.sh` |
