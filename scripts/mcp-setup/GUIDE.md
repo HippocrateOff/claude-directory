@@ -43,12 +43,29 @@ Chaque bloc est sauté (SKIP) si son prérequis manque :
 | Bloc | Prérequis | À faire ensuite |
 |------|-----------|-----------------|
 | clinical-trial-design (plugin) | R ≥ 4.2 et `R -e 'install.packages(c("gsDesign","gsDesign2","graphicalMCP","jsonlite","officer","rmarkdown"))'` | Rien |
+| openresearch | uv | Rien. Sans compte ni clé : recherche web, lecture d'URL et de PDF, OpenAlex, Hacker News, Stack Overflow, dépôts, transcriptions YouTube |
 | figma-mcp-go | Node, Figma Desktop | Figma Desktop > Plugins > Development > Import plugin from manifest (`manifest.json` du `plugin.zip` des releases GitHub) |
-| qgis | QGIS 3.28+, uv | QGIS > Extensions > Installer/Gérer les extensions > « QGIS MCP » |
+| qgis | QGIS 3.28+, uv, plugin QGIS | Voir « QGIS » ci-dessous |
 | hyperframes (MCP timeverse) | uv, CLI `npx hyperframes` | Tester avec `/mcp` |
-| recreator | pip | Rien : la commande `recreator-mcp` est branchée |
+| recreator | pip | Rien. `recreator-mcp --help` vérifié : sans option, il parle stdio |
 | blender-full | `BLENDER_FULL=1`, pip, git | N'active qu'**un** addon Blender à la fois : les deux utilisent le port 9876 |
 | CatCut | Windows, uv (Python 3.11–3.12), Kdenlive | Copier la config affichée par `catcut config show-mcp` |
+
+### QGIS
+
+Le plugin QGIS est un prérequis manuel. Sans lui, le serveur MCP démarre mais ne peut pas piloter QGIS : le serveur parle au plugin par TCP sur `127.0.0.1:9876`.
+
+1. Ouvre QGIS > Extensions > Installer/Gérer les extensions, cherche **QGIS MCP**, puis installe-le.
+2. Démarre le serveur du plugin depuis son bouton dans la barre d'outils.
+3. Vérifie que le port écoute : `lsof -i :9876` (macOS/Linux) ou `netstat -ano | findstr 9876` (Windows).
+4. Dans Claude Code, `/mcp` doit afficher `qgis` connecté.
+
+**Conflit de port :** QGIS MCP et les deux addons Blender (mcp-for-blender, mcp-blender) utilisent tous le port **9876**. Pour garder QGIS et Blender ouverts ensemble, change le port de QGIS dans le menu de son bouton (par exemple 9877). Ajoute ensuite le même port côté Claude Code :
+
+```bash
+claude mcp remove --scope user qgis
+claude mcp add --scope user qgis -e QGIS_MCP_PORT=9877 -- uvx --from https://github.com/nkarasiak/qgis-mcp/archive/refs/heads/main.zip qgis-mcp-server
+```
 
 ## Étape 2 : authentifier les serveurs OAuth
 
@@ -87,8 +104,8 @@ Réglages > Connecteurs (ou « + » dans la conversation > Connecteurs) :
 
 | Outil | À faire |
 |-------|---------|
-| Blender | `uvx mcp-for-blender install-addon`, puis dans Blender : Édition > Préférences > Modules complémentaires, activer « Interface: MCP for Blender ». Dans la barre latérale (touche N), cliquer **Start MCP Server**. |
-| HyperFrames | Le plugin s'utilise via ses skills ; le CLI se lance avec `npx hyperframes init`, `preview` ou `render`. Si un fichier du plugin est un pointeur Git LFS, lance `git -C ~/.claude/plugins/marketplaces/hyperframes lfs pull`. |
+| Blender | `uvx mcp-for-blender install-addon`, puis dans Blender : Édition > Préférences > Modules complémentaires, activer « Interface: MCP for Blender ». Dans la barre latérale (touche N), cliquer **Start MCP Server**. Variante en une ligne : `curl -LsSf https://www.mcp-for-blender.com/install.sh \| sh` (Windows : `irm https://www.mcp-for-blender.com/install.ps1 \| iex`). Elle installe uv, configure tes clients MCP et active l'addon. Lis le script avant de le lancer : s'il ajoute lui aussi un serveur `blender`, tu peux l'avoir en double. |
+| HyperFrames | Le plugin s'utilise via ses skills ; le CLI se lance avec `npx hyperframes init`, `preview` ou `render`. Si un fichier du plugin est un pointeur Git LFS, lance `git -C ~/.claude/plugins/marketplaces/hyperframes lfs pull`. Le rendu peut aussi passer par le MCP hébergé de HeyGen (`https://mcp.heygen.com/mcp/hyperframes`, crédits HeyGen, non testé ici). L'auto-hébergement (`ismailkattakath/hyperframes-selfhost`) n'est pas à considérer comme équivalent tant que le rendu local de tous les formats, MOV ProRes compris, n'a pas été testé. |
 | GitMCP (lecture seule) | `claude mcp add --scope user --transport http gitmcp https://gitmcp.io/OWNER/REPO`, en remplaçant `OWNER/REPO` par un vrai dépôt. |
 
 ## Étape 7 : CLAUDE.md
@@ -112,11 +129,18 @@ Brief (Claude) > plans IA et musique (Atlas Cloud) > voix (ElevenLabs) > motion 
 
 - **SiteSkite** : RCE critique (CVE-2026-96349, CVSS 10) jusqu'à la 2.1.8, corrigée en 2.2.0.
 - **Google Flow** : aucun MCP officiel. Le serveur communautaire pilote l'interface via Chrome (fragile).
-- **dsh-mcp-center**, **keyless-mcp (sineframe)** : introuvables.
+- **keyless-mcp (sineframe)** : introuvable.
+- **Hyperbits** : aucun paquet `hyperbits` sur npm (vérifié le 2026-10-21). À ajouter quand le nom exact du paquet sera connu.
 
 ## Sécurité
 
 Un serveur MCP s'exécute avec tes droits. Installe-les un par un, lis les permissions demandées, et garde tes clés hors des fichiers partagés.
+
+### DeepSeek Harness (dsh-mcp-center)
+
+Hors kit, car c'est pour DeepSeek et non pour Claude Code. Le paquet npm `dsh-mcp-center` existe. Pour l'installer : `dsh plugin --profile web add dsh-mcp-center`, puis Settings > MCP Center pour ajouter les serveurs en HTTP ou stdio.
+
+`~/.dsh/mcp-center.json` contient les tokens Bearer **en clair**. Traite-le comme un `.env` : ne le commite jamais, ne le partage pas, et garde-le hors des dossiers synchronisés.
 
 ## Retirer un serveur
 

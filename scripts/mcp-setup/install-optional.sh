@@ -19,6 +19,10 @@ else
   cmd_step ctd-plugin -- claude plugin install clinical-trial-design@wei-ai-lab
 fi
 
+echo "=== Recherche (gratuit, sans clé) ==="
+# openresearch-mcp : web, PDF, OpenAlex, Hacker News, Stack Overflow, dépôts, transcriptions YouTube
+mcp_step openresearch uvx -- --scope user openresearch -- uvx openresearch-mcp --stdio
+
 echo "=== Design ==="
 mcp_step figma-mcp-go npx -- --scope user figma-mcp-go -- npx -y @vkhanhqui/figma-mcp-go@latest
 echo "  -> figma-mcp-go : importe aussi le plugin (Figma Desktop > Plugins > Development > Import plugin from manifest, manifest.json du plugin.zip des releases)."

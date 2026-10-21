@@ -5,7 +5,7 @@ A kit that registers research, video-editing and design MCP servers, plugins and
 | Script | What it installs |
 |--------|------------------|
 | `install-mcp.sh` | The core: verified servers that need no API key, the HyperFrames plugin, the beat-sync skill, and the OAuth servers |
-| `install-optional.sh` | Servers with heavy prerequisites: R, QGIS, Figma Desktop, Windows/Kdenlive, and full Blender with `BLENDER_FULL=1` |
+| `install-optional.sh` | openresearch (free, no key), plus servers with heavy prerequisites: R, QGIS, Figma Desktop, Windows/Kdenlive, and full Blender with `BLENDER_FULL=1` |
 | `install-api-keys.sh` | Servers that need a key: Atlas Cloud, ElevenLabs, GitHub. Only the keys you provide are used |
 | `lib.sh` | Shared helper functions, loaded by the scripts above. Don't run it on its own |
 
